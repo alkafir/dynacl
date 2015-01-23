@@ -34,6 +34,16 @@ static HMODULE dynacl_dll = NULL;
  */
 static unsigned int dynacl_loadLibraries();
 
+/*!
+ * Loads the optional function sets.
+ */
+static void dynacl_loadOptionalFunctions();
+
+/*!
+ * Clears the optional function variables.
+ */
+static void dynacl_clearOptionalFunctions();
+
 unsigned int dynacl_init(LPCSTR dllLibrary) {
   dynacl_dll = LoadLibrary(dllLibrary); /* FIXME: Check if the file exists before calling this function */
 
@@ -137,6 +147,7 @@ static unsigned int dynacl_loadLibraries() {
     DYNACL_LOADFUNC(CLGETEXTENSIONFUNCTIONADDRESS_PTR, clGetExtensionFunctionAddress);
   #undef DYNACL_LOADFUNC
 
+  dynacl_loadOptionalFunctions();
   return DYNACL_SUCCESS;
 }
 
@@ -220,6 +231,20 @@ void dynacl_shutdown() {
     DYNACL_UNLOADFUNC(clGetExtensionFunctionAddress);
   #undef DYNACL_UNLOADFUNC
 
+  dynacl_clearOptionalFunctions();
+
   FreeLibrary(dynacl_dll);
   dynacl_dll = NULL;
+}
+
+void dynacl_loadOptionalFunctions() {
+  #define DYNACL_LOADFUNC(functype, funcvar) funcvar = (functype)GetProcAddress(dynacl_dll, TEXT(#funcvar))
+
+  #undef DYNACL_LOADFUNC
+}
+
+void dynacl_clearOptionalFunctions() {
+  #define DYNACL_UNLOADFUNC(funcvar) funcvar = NULL
+
+  #undef DYNACL_UNLOADFUNC
 }
